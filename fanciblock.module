@@ -116,54 +116,38 @@ function fanciblock_menu() {
     'access arguments' => array('administer fanciblock'),
     'file' => 'fanciblock.box.admin.inc',
   );
-  // THis is just a fake link. It will show up in fanciblock contextual menus
-  // so that we can identify them. THis is because all blocks have their 
-  // $root_path set as 'admin/structure/menu/manage/%' because of Layout, and
-  // that makes it hard to figure which block belongs to which module.
-  $items['fanciblock/stub/%'] = array(
-    'title' => 'Block information',
-    'type' => MENU_CALLBACK,
-    'context' => MENU_CONTEXT_INLINE,
-    'page callback' => '/',
-    'menu_name' => 'fanciblock',
-    'access callback' => TRUE,
-  );
-  // To use local task menu items, there must be a parent page.
-  $items['fanciblock'] = array(
-    'title' => 'The stub page',
-    'page callback' => 'node',
-    'menu_name' => 'fanciblock',
-    'access callback' => TRUE,
-  );
   return $items;
 }
 
 /**
  *  Implements hook_menu_contextual_links_alter
  *  
- *  This adds links to edit individual fanciblock boxes tot the main fanciblock
- *  contextual links menu. It uses the stub contextual link menu item to find
- *  fanciblocks, then deletes the stub.
+ *  Adds links for editing individual fanciblock boxes to the main fanciblock
+ *  contextual links menu. 
  */
 function fanciblock_menu_contextual_links_alter(&$links, $router_item, $root_path) {
- if ($root_path == 'fanciblock/stub/%') {
-    $fanciblock = $router_item['map'][2];
-    $config = fanciblock_get_settings($fanciblock);
-    if($config) {
-      foreach($config as $box) {
-        $links['fb' . $box['boxid']] = array(
-          'title' => 'Edit ' . $box['box_title'],
-          'href' => 'admin/config/media/fanciblocks/' . $box['fanciblock_name'] . '/' . $box['boxid'] . '/edit',
+  if ($root_path == 'admin/structure/layouts/manage/%') {
+    $uuid = $router_item['page_arguments'][3];
+    $layout = $router_item['page_arguments'][1];
+    $block = $layout->content[$uuid];
+    if($block->module == 'fanciblock'){
+      $config = $block->settings['fanciblock_settings']['box_settings'];
+      if($config) {
+        foreach($config as $box) {
+          $links['fb' . $box['boxid']] = array(
+            'title' => 'Edit ' . $box['box_title'],
+            'href' => 'admin/config/media/fanciblocks/' . $box['fanciblock_name'] . '/' . $box['boxid'] . '/edit',
+            'localized_options' => array(),
+          );
+        }
+        $links['ls' . $fanciblock] = array(
+          'title' => 'Re-order',
+          'href' => 'admin/config/media/fanciblocks/' . $fanciblock,
           'localized_options' => array(),
         );
       }
-      $links['ls' . $fanciblock] = array(
-        'title' => 'Re-order',
-        'href' => 'admin/config/media/fanciblocks/' . $fanciblock,
-        'localized_options' => array(),
-      );
+      
     }
-  unset($links['fanciblock-']);
   }
 }
 
@@ -231,81 +215,12 @@ function fanciblock_block_info() {
   $blocks = array();
   $blocks['fanciblock']['info'] = t('Fanciblock image');
   $blocks['fanciblock']['description'] = t('Fanciblock image');
+  $blocks['fanciblock']['class'] = 'FanciblockClass';
   
   $blocks['fanciicon']['info'] = t('Fanciblock icon');
   $blocks['fanciicon']['description'] = t('Fanciblock icon');
+  $blocks['fanciicon']['class'] = 'FanciblockClass';
   return $blocks;
-}
-
-function fanciblock_block_configure($delta = '', $settings = array()) {
-  $form = array();
-  if ($delta == 'fanciblock' || $delta == 'fanciicon') {
-    module_load_include('inc', 'fanciblock', 'fanciblock.admin'); 
-    $settings = _flatten_fanciblock_settings ($settings);
-    $form = fanciblock_edit_box('edit', $delta, $settings);
-  }
-  return $form;
-}
-
-/**
- *  Saves a block (fanciblock) during block configure.
- *  
- *  @param [in] $delta Parameter_Description
- *  @return Return_Description
- *  
- *  @details Details
- */
-function fanciblock_block_save($delta, &$edit = array()) {
-  if ($delta == 'fanciblock' || $delta == 'fanciicon') {
-    $config = config('fanciblock.settings');
-    
-    // Set up defaults.
-    $default_fid = $config->get('default_fid');
-    $default_fanciblock_uri = $config->get('default_fanciblock_uri');
-    $default_box = array(
-      'fanciblock_name' => $edit['fanciblock_name'], 
-      'boxid' => '', 
-      'box_title' => '', 
-      'weight' => 0, 
-      'box_content' => 'Hello!'
-    );
-    if ($delta == 'fanciblock') {
-      $default_box += array(
-        'fanciblock_fid' => $default_fid, 
-        'fanciblock_uri' => $default_fanciblock_uri, 
-      );
-    }
-    elseif($delta == 'fanciicon') {
-      $default_box += array(
-        'fontawesome_icon' => 'fa-tablet',
-        'fontawesome_icon_color' => '#333333',
-      );
-    }
-    
-    // Check and see if this block's settings already exist. Theyre saved in
-    // config, keyed by the block's unique name (fanciblock_name).
-    $settings = $config->get($edit['fanciblock_name']);
-
-    // If we dont find the settings, this is a new block being built, so
-    // build and save a default box for each grid.
-    if(!$settings) {
-      $boxes = _fanciblock_add_default_boxes($edit['grid']['grid'], $default_box, $delta);
-      fanciblock_box_save($edit['fanciblock_name'], $boxes);
-    }
-    // If we are adding boxes, Grid number will be more than the number of 
-    // settings.
-    elseif($edit['grid']['grid'] > count($settings)) {
-      $adding = $edit['grid']['grid'] - count($settings);
-      $boxes = _fanciblock_add_default_boxes($adding, $default_box, $delta);
-      $settings = $settings + $boxes;
-      
-      fanciblock_box_save($edit['fanciblock_name'], $settings);
-    }
-    // Theres no safe way to decrease the number of boxes, so we dont allow that.
-    elseif($edit['grid']['grid'] < count($settings)) {
-      form_set_error('', 'Cannot decrease number of boxes, please delete box instead');
-    }
-  }
 }
 
 function _fanciblock_add_default_boxes($number, $default_box, $delta) {  
@@ -355,13 +270,13 @@ function fanciblock_block_view($delta = '', $settings = array(), $contexts = arr
  */
 function fanciblock_load_fanciblocks($delta, $settings) {
   // Load the config file.
-  $boxes = fanciblock_get_settings($settings['fanciblock_name']);
+  $boxes = $settings['fanciblock_settings']['box_settings'];
   
   backdrop_add_css(backdrop_get_path('module', 'fanciblock') . '/fontawesome/css/font-awesome.css'); // add library fontawesome.css
   backdrop_add_css(backdrop_get_path('module', 'fanciblock') . '/css/fanciblock.css'); // add css
   backdrop_add_js(backdrop_get_path('module', 'fanciblock') . '/js/fanciblock.js'); // add js
   
-  $settings = _flatten_fanciblock_settings($settings);
+  $settings = _flatten_fanciblock_settings($settings['fanciblock_settings']);
   $settings['delta'] = $delta;
   if($settings['icon-position'] == 'right' || $settings['icon-position'] == 'left') {
     return theme('fanciblock_horizontal', array('fanciblock_data' => $boxes, 'settings' => $settings, 'preview' => FALSE));
@@ -441,5 +356,16 @@ function _fanciblock_validate_color_value($element, &$form_state) {
  */
 function fanciblock_get_settings($fanciblock_name) {
   return config_get('fanciblock.settings', $fanciblock_name);
+}
+
+/**
+ * Implements hook_autoload_info().
+ *
+ * Required to load our custom class.
+ */
+function fanciblock_autoload_info() {
+  return array(
+    'FanciblockClass' => 'fanciblock.inc',
+  );
 }
 

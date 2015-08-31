@@ -50,11 +50,9 @@ function theme_fanciblock_admin_overview($variables) {
  */
 function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
   drupal_add_css(drupal_get_path('module', 'fanciblock') . '/css/fanciblock_admin.css');
-  
   //dprint_r($fanciblock);
   // $settings = config_get('fanciblock.settings', $fanciblock['fanciblock_name']);
   $grid_count = isset($fanciblock['grid']) ? $fanciblock['grid'] : 3;
-
   $fanciblock += array(
     'fanciblock_name' => '',
     'old_name' => !empty($fanciblock['fanciblock_name']) ? $fanciblock['fanciblock_name'] : '',
@@ -167,7 +165,7 @@ function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
     '#attributes' => array('class' => array('container-inline')),
     '#states' => array(
       'visible' => array(
-        ':input[name="block_settings[appearance][icon-bg-color-status]"]' => array('checked' => TRUE),
+        ':input[name="appearance[icon-bg-color-status]"]' => array('checked' => TRUE),
       ),
     ),
   );
@@ -195,7 +193,7 @@ function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
     '#attributes' => array('class' => array('container-inline')),
     '#states' => array(
       'visible' => array(
-        ':input[name="block_settings[appearance][icon-border-status]"]' => array('checked' => TRUE),
+        ':input[name="appearance[icon-border-status]"]' => array('checked' => TRUE),
       ),
     ),
   );
@@ -244,7 +242,7 @@ function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
     '#attributes' => array('class' => array('container-inline')),
     '#states' => array(
       'visible' => array(
-        ':input[name="block_settings[appearance][box-bg-color-status]"]' => array('checked' => TRUE),
+        ':input[name="appearance[box-bg-color-status]"]' => array('checked' => TRUE),
       ),
     ),
   );
@@ -272,7 +270,7 @@ function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
     '#attributes' => array('class' => array('container-inline')), 
     '#states' => array(
       'visible' => array(
-        ':input[name="block_settings[appearance][box-border-status]"]' => array('checked' => TRUE),
+        ':input[name="appearance[box-border-status]"]' => array('checked' => TRUE),
       ),
     ),
   );
