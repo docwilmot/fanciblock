@@ -26,7 +26,7 @@ function fanciblock_overview_page() {
   else {
     $header = array(t('fanciblock Name'), array('data' => t('Operations')));
     $rows = array();
-    $rows[] = array(array('data' => t('There are no fanciblock yet')));
+    $rows[] = array(array('data' => t('There are no fanciblocks yet')));
   }
   return theme('table', array('header' => $header, 'rows' => $rows));
 }
@@ -49,6 +49,7 @@ function theme_fanciblock_admin_overview($variables) {
  * Menu callback; Build the form that handles the adding/editing of a fanciblock.
  */
 function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
+  dpm($fanciblock);
   drupal_add_css(drupal_get_path('module', 'fanciblock') . '/css/fanciblock_admin.css');
   //dprint_r($fanciblock);
   // $settings = config_get('fanciblock.settings', $fanciblock['fanciblock_name']);

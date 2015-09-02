@@ -93,26 +93,26 @@ function fanciblock_menu() {
     'file' => 'fanciblock.admin.inc',
   );
   //List box.
-  $items['admin/config/media/fanciblocks/%'] = array(
+  $items['admin/config/media/fanciblocks/%layout/%'] = array(
     'title' => 'List Box',
     'page callback' => 'backdrop_get_form',
-    'page arguments' => array('fanciblock_box_overview_form', 4),
+    'page arguments' => array('fanciblock_box_overview_form', 4, 5),
     'access arguments' => array('administer fanciblock'),
     'file' => 'fanciblock.box.admin.inc',
   );
   //Edit box.
-  $items['admin/config/media/fanciblocks/%/%/edit'] = array(
+  $items['admin/config/media/fanciblocks/%layout/%/%/edit'] = array(
     'title' => 'Edit box',
     'page callback' => 'backdrop_get_form',
-    'page arguments' => array('fanciblock_box_edit_box', 'edit', 4, 5),
+    'page arguments' => array('fanciblock_box_edit_box', 'edit', 4, 5, 6),
     'access arguments' => array('administer fanciblock'),
     'file' => 'fanciblock.box.admin.inc',
   );
   //Delete box.
-  $items['admin/config/media/fanciblocks/%/%/delete'] = array(
+  $items['admin/config/media/fanciblocks/%layout/%/%/delete'] = array(
     'title' => 'Delete box',
     'page callback' => 'backdrop_get_form',
-    'page arguments' => array('fanciblock_box_delete_box', 'delete', 4, 5),
+    'page arguments' => array('fanciblock_box_delete_box', 4, 5, 6),
     'access arguments' => array('administer fanciblock'),
     'file' => 'fanciblock.box.admin.inc',
   );
@@ -136,13 +136,13 @@ function fanciblock_menu_contextual_links_alter(&$links, $router_item, $root_pat
         foreach($config as $box) {
           $links['fb' . $box['boxid']] = array(
             'title' => 'Edit ' . $box['box_title'],
-            'href' => 'admin/config/media/fanciblocks/' . $box['fanciblock_name'] . '/' . $box['boxid'] . '/edit',
+            'href' => 'admin/config/media/fanciblocks/' . $layout->name . '/' . $uuid . '/' . $box['boxid'] . '/edit',
             'localized_options' => array(),
           );
         }
-        $links['ls' . $fanciblock] = array(
+        $links['ls-reorder'] = array(
           'title' => 'Re-order',
-          'href' => 'admin/config/media/fanciblocks/' . $fanciblock,
+          'href' => 'admin/config/media/fanciblocks/' . $layout->name . '/' . $uuid,
           'localized_options' => array(),
         );
       }
@@ -204,8 +204,13 @@ function fanciblock_overview_title($fanciblock) {
  *   - fontawesome_icon: The font awesome icon.
  *   - box_content: The box content.
  */
-function fanciblock_box_save($fanciblock_name, $box = NULL) {
-  config_set('fanciblock.settings', $fanciblock_name, $box);
+function fanciblock_box_save($fanciblock_name, $box, $layout_name, $uuid) {
+  $layout = 'layout.layout.' . $layout_name;
+  $config = config($layout);
+  $config_path = 'content.' . $uuid . '.data.settings.fanciblock_settings.box_settings.' . $box['boxid']; 
+  $config->set($config_path, $box);
+  $config->save();
+  layout_reset_caches();
 }
 
 /**
@@ -277,6 +282,7 @@ function fanciblock_load_fanciblocks($delta, $settings) {
   backdrop_add_js(backdrop_get_path('module', 'fanciblock') . '/js/fanciblock.js'); // add js
   
   $settings = _flatten_fanciblock_settings($settings['fanciblock_settings']);
+  dpm($settings);
   $settings['delta'] = $delta;
   if($settings['icon-position'] == 'right' || $settings['icon-position'] == 'left') {
     return theme('fanciblock_horizontal', array('fanciblock_data' => $boxes, 'settings' => $settings, 'preview' => FALSE));
@@ -295,16 +301,21 @@ function _flatten_fanciblock_settings ($settings = array()) {
     $fanciblock['icon-position']			= $settings['appearance']['icon-position'];
     $fanciblock['icon-style']				= $settings['appearance']['icon-style'];
     $fanciblock['icon-size']				= $settings['appearance']['icon-size'];
-    $fanciblock['icon-bg-color']			= $settings['appearance']['icon-bg-color'];
+    $fanciblock['box-padding']				= $settings['appearance']['box-padding'];
+    
+    $fanciblock['icon-bg-color']			= $settings['appearance']['icon-bg-color-container']['icon-bg-color'];
+    $fanciblock['icon-bg-color-status']			= $settings['appearance']['icon-bg-color-status'];
 
+    $fanciblock['icon-border-status']				= $settings['appearance']['icon-border'];
     $fanciblock['icon-border']				= $settings['appearance']['icon-border-container']['icon-border'];
     $fanciblock['icon-border-width']		= (int)$settings['appearance']['icon-border-container']['icon-border-width'];
     $fanciblock['icon-border-style']		= $settings['appearance']['icon-border-container']['icon-border-style'];
     $fanciblock['icon-border-color']		= $settings['appearance']['icon-border-container']['icon-border-color'];
 
+    $fanciblock['box-bg-color-status']				= $settings['appearance']['box-bg-color-status'];
     $fanciblock['box-bg-color']				= $settings['appearance']['box-bg-container']['box-bg-color'];
-    $fanciblock['box-padding']				= $settings['appearance']['box-padding-container']['box-padding'];
 
+    $fanciblock['box-border-status']				= $settings['appearance']['box-border-container']['box-border'];
     $fanciblock['box-border']				= $settings['appearance']['box-border-container']['box-border'];
     $fanciblock['box-border-width']			= (int)$settings['appearance']['box-border-container']['box-border-width'];
     $fanciblock['box-border-style']			= $settings['appearance']['box-border-container']['box-border-style'];

@@ -36,6 +36,7 @@ class FanciblockClass extends Block {
    *  Sets block content on block view.
    */
   function getContent() {
+    dpm($this);
     $data['content'] =  array(
       '#markup' => fanciblock_load_fanciblocks($this->delta, $this->settings),
     );
@@ -59,6 +60,7 @@ class FanciblockClass extends Block {
    * Settings are saved to the active layout configuration file.
    */
   function formSubmit($form, &$form_state) {
+    dpm($form_state);
     $config = config('fanciblock.settings');
     // Set up defaults.
     $default_fid = $config->get('default_fid');
@@ -89,12 +91,18 @@ class FanciblockClass extends Block {
     // Check and see if this block's settings already exist. Theyre saved in
     // config, keyed by the block's unique name (fanciblock_name).
     $settings = $this->settings['fanciblock_settings'];
+    $box_settings = array();
+    if($settings && $settings['box_settings']) {
+      $box_settings = $settings['box_settings'];
+    }
+    
     $boxes = array();
     $this->settings['fanciblock_settings'] = $form_state['values'];
+    $this->settings['fanciblock_settings']['box_settings'] = $box_settings;
 
     // If we dont find the settings, this is a new block being built, so
     // build and save a default box for each grid.
-    if(!$settings['box_settings']) {
+    if(!empty($settings['box_settings'])) {
       $boxes = _fanciblock_add_default_boxes($form_state['values']['grid']['grid'], $default_box, $delta);
       $this->settings['fanciblock_settings']['box_settings'] = $boxes;
     }
