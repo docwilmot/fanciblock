@@ -9,7 +9,6 @@
  */
 function fanciblock_overview_page() {
   $result = config_get('fanciblock.settings');
-  dpm($result);
   
   if($result) {
     $header = array(t('Fanciblock name'), 'data' => t('Operations'));
@@ -49,14 +48,11 @@ function theme_fanciblock_admin_overview($variables) {
  * Menu callback; Build the form that handles the adding/editing of a fanciblock.
  */
 function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
-  dpm($fanciblock);
   drupal_add_css(drupal_get_path('module', 'fanciblock') . '/css/fanciblock_admin.css');
-  //dprint_r($fanciblock);
-  // $settings = config_get('fanciblock.settings', $fanciblock['fanciblock_name']);
+
   $grid_count = isset($fanciblock['grid']) ? $fanciblock['grid'] : 3;
   $fanciblock += array(
     'fanciblock_name' => '',
-    'old_name' => !empty($fanciblock['fanciblock_name']) ? $fanciblock['fanciblock_name'] : '',
     'title' => '',
     'optionset' => '',
   );
@@ -67,12 +63,10 @@ function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
 
   $form['fanciblock_name'] = array(
     '#type' => 'textfield',
-    '#title' => t('fanciblock name'),
+    '#title' => t('Fanciblock name'),
     '#default_value' => $fanciblock['fanciblock_name'],
     '#maxlength' => 27,
-    '#disabled' => !empty($fanciblock['fanciblock_name']),
-    '#element_validate' => empty($fanciblock['fanciblock_name']) ? array('_fanciblock_validate_name') : array(),
-    '#description' => t('A unique name to construct the URL for the fanciblock. It must only contain lowercase letters, numbers and underscores.'),
+    '#required' => TRUE,
   );
 
   // Grid Type
@@ -158,6 +152,11 @@ function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
     '#type' => 'checkbox',
     '#title' => t('Icon Background Color'),
     '#default_value' => isset($fanciblock['icon-bg-color-status']) ? $fanciblock['icon-bg-color-status'] : false,
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="appearance[icon-style]"]' => array('value' => 'none'),
+      ),
+    ),
   );
   $form['appearance']['icon-bg-color-container'] = array(
     '#type' => 'fieldset', 
@@ -186,6 +185,11 @@ function fanciblock_edit_box($type, $delta, $fanciblock = array()) {
     '#type' => 'checkbox',
     '#title' => t('Icon Border'),
     '#default_value' => isset($fanciblock['icon-border']) ? $fanciblock['icon-border'] : false,
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="appearance[icon-style]"]' => array('value' => 'none'),
+      ),
+    ),
   );
   $form['appearance']['icon-border-container'] = array(
     '#type' => 'fieldset', 

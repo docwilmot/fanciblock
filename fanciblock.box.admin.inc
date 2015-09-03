@@ -5,7 +5,6 @@
 function fanciblock_box_overview_form($form, &$form_state, $layout, $uuid) {
   $form['fanciblock_box']['#tree'] = TRUE;
   $result = $layout->content[$uuid]->settings['fanciblock_settings']['box_settings'];
-  dpm($layout);
 
   backdrop_sort($result, array('weight' => SORT_NUMERIC));
   
@@ -14,9 +13,14 @@ function fanciblock_box_overview_form($form, &$form_state, $layout, $uuid) {
     '#value' => $result,
   );
     
-  $form['fanciblock_name'] = array(
+  $form['layout_name'] = array(
     '#type' => 'value',
-    '#value' => $fanciblock_name,
+    '#value' => $layout->name,
+  );
+    
+  $form['uuid'] = array(
+    '#type' => 'value',
+    '#value' => $uuid,
   );
     
   foreach ($result as $box) {
@@ -50,8 +54,7 @@ function fanciblock_box_overview_form($form, &$form_state, $layout, $uuid) {
     );
   }
   else {
-    $form['#empty_text'] = t('There are no box yet. <a href="@link">Add box</a>.', 
-    array('@link' => url('admin/config/media/fanciblocks/manage/'. $fanciblock_name .'/add')));
+    $form['#empty_text'] = t('There are no boxes yet.');
   }
   return $form;
 }
@@ -92,7 +95,13 @@ function fanciblock_box_overview_form_submit($form, &$form_state) {
   foreach ($settings as $key => $setting) {
     $settings[$key]['weight'] = $weights[$key]['weight'];
   }
-  config_set('fanciblock.settings', $form_state['values']['fanciblock_name'], $settings);
+  $config_path = 'layout.layout.' . $form_state['values']['layout_name'];
+  $config = config($config_path);
+  $content = $config->get();
+  $content['content'][$form_state['values']['uuid']]['data']['settings']['fanciblock_settings']['box_settings'] = $settings;
+  $config->setData($content);
+  $config->save();
+  layout_reset_caches();
 }
 
 /**
@@ -152,10 +161,6 @@ function fanciblock_box_edit_box($form, &$form_state, $type, $layout, $uuid, $bo
     '#type' => 'hidden',
     '#value' => $boxid,
   );
-  $form['fanciblock_name'] = array(
-    '#type' => 'hidden',
-    '#value' => $box['fanciblock_name'],
-  );
   $form['fanciblock_type'] = array(
     '#type' => 'hidden',
     '#value' => $box['fanciblock_type'],
@@ -184,7 +189,8 @@ function fanciblock_box_edit_box($form, &$form_state, $type, $layout, $uuid, $bo
     '#value' => $box['weight'],
   );
   $form['box_content'] = array(
-    '#type' => 'textarea',
+    '#type' => 'text_format',
+    '#format' => 'filtered_html',
     '#title' => t('Box Content'),
     '#default_value' => $box['box_content'],
   );
@@ -213,6 +219,12 @@ function fanciblock_box_edit_box($form, &$form_state, $type, $layout, $uuid, $bo
       '#element_validate' => array('_fanciblock_validate_color_value'),
     );
   }
+  $form['icon_link'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Icon Link'),
+    '#default_value' => $box['icon_link'],
+    '#description' => t('Optional path to which the icon or image will be linked.'),
+  );
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
@@ -236,6 +248,7 @@ function fanciblock_box_edit_box_submit($form, &$form_state) {
   $layout = $form_state['values']['layout'];
   $uuid = $form_state['values']['uuid'];
   global $user;
+  dpm($form_state['values']['box_content']);
   // Save common form values
   $box = array(
     'fanciblock_name' => $form_state['values']['fanciblock_name'],
@@ -244,12 +257,12 @@ function fanciblock_box_edit_box_submit($form, &$form_state) {
     'box_content' => $form_state['values']['box_content'],
     'boxid' => $form_state['values']['boxid'],
     'fanciblock_type' => $form_state['values']['fanciblock_type'],
+    'icon_link' => $form_state['values']['icon_link'],
   );
   // Save type-specific values. Start with fanciblock.
   if($form_state['values']['fanciblock_type'] == 'fanciblock') {
     // If the image field is set, save the image.
     if($form_state['values']['fanciblock_uri']) {
-  dpm($box);
       $file = file_load($form_state['values']['fanciblock_uri']);
       $file->status = FILE_STATUS_PERMANENT;
       file_save($file);
@@ -269,11 +282,8 @@ function fanciblock_box_edit_box_submit($form, &$form_state) {
     $box['fontawesome_icon_color'] = $form_state['values']['fontawesome_icon_color'];
   }
   //$fanciblock[$form_state['values']['boxid']] = $box;
-  fanciblock_box_save($form_state['values']['fanciblock_name'], $box, $layout->name, $uuid);
+  fanciblock_box_save($box, $layout->name, $uuid);
   backdrop_set_message(t('Your configuration has been saved.'));
-  // $path = 'fanciblocks/manage/';
-  // fanciblock_box_save($box);
-  // $form_state['redirect'] = $path . $box['fanciblock_name'];
 }
 
 /**
@@ -322,7 +332,6 @@ function fanciblock_box_delete_box_submit($form, &$form_state) {
   $t_args = array('%title' => $deleted);
   backdrop_set_message(t('The fanciblock box %title has been deleted.', $t_args));
   watchdog('fanciblock', 'Deleted fanciblock box %title.', $t_args, WATCHDOG_NOTICE);
-  //$form_state['redirect'] = 'admin/config/media/fanciblocks/' . $form['#fanciblock_name'];
 }
 
 /**

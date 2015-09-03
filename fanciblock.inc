@@ -13,7 +13,7 @@ class FanciblockClass extends Block {
    *  Defaults to the 'title' attribute set in hook_block_info
    */
   function getAdminTitle() {
-    return t('Example: uses custom class');
+    return t('Fanciblock');
   }
 
   /**
@@ -22,23 +22,15 @@ class FanciblockClass extends Block {
    *  Defaults to the 'description' attribute set in hook_block_info
    */
   function getAdminPreview() {
-    return t('This block uses a custom class.');
-  }
-
-  /**
-   *  Sets block subject on block view.
-   */
-  function getTitle() {
-    return t('Title of custom class block (example_custom_class)');
+    return $this->delta == 'fanciicon' ? t('Fanciicon Block') : t('Fanciimage Block');
   }
 
   /**
    *  Sets block content on block view.
    */
   function getContent() {
-    dpm($this);
     $data['content'] =  array(
-      '#markup' => fanciblock_load_fanciblocks($this->delta, $this->settings),
+      '#markup' => fanciblock_build_display($this->delta, $this->settings),
     );
     return render($data);
   }
@@ -60,7 +52,6 @@ class FanciblockClass extends Block {
    * Settings are saved to the active layout configuration file.
    */
   function formSubmit($form, &$form_state) {
-    dpm($form_state);
     $config = config('fanciblock.settings');
     // Set up defaults.
     $default_fid = $config->get('default_fid');
@@ -70,7 +61,8 @@ class FanciblockClass extends Block {
       'boxid' => '', 
       'box_title' => '', 
       'weight' => 0, 
-      'box_content' => 'Hello!'
+      'box_content' => 'This is Fancibox content!',
+      'icon_link' => '',
     );
     $delta = $form_state['block']->delta;
     if ($delta == 'fanciblock') {
@@ -89,7 +81,7 @@ class FanciblockClass extends Block {
     form_state_values_clean($form_state);
 
     // Check and see if this block's settings already exist. Theyre saved in
-    // config, keyed by the block's unique name (fanciblock_name).
+    // config.
     $settings = $this->settings['fanciblock_settings'];
     $box_settings = array();
     if($settings && $settings['box_settings']) {
