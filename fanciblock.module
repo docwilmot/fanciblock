@@ -257,35 +257,16 @@ function fanciblock_build_display($delta, $settings) {
  *  A function to get shorter key:value pairs for settings.
  */
 function _flatten_fanciblock_settings ($settings = array()) {
-  $fanciblock = array();
-  if($settings) {
-    $fanciblock['fanciblock_name']	= $settings['fanciblock_name'];
-    $fanciblock['fanciblock_type']	= $settings['fanciblock_type'];
-    $fanciblock['grid'] = $settings['grid']['grid'];
-    $fanciblock['icon-position'] = $settings['appearance']['icon-position'];
-    $fanciblock['icon-style'] = $settings['appearance']['icon-style'];
-    $fanciblock['icon-size'] = $settings['appearance']['icon-size'];
-    $fanciblock['box-padding'] = $settings['appearance']['box-padding'];
-    
-    $fanciblock['icon-bg-color'] = $settings['appearance']['icon-bg-color-container']['icon-bg-color'];
-    $fanciblock['icon-bg-color-status'] = $settings['appearance']['icon-bg-color-status'];
-
-    $fanciblock['icon-border-status'] = $settings['appearance']['icon-border'];
-    $fanciblock['icon-border'] = $settings['appearance']['icon-border-container']['icon-border'];
-    $fanciblock['icon-border-width'] = (int)$settings['appearance']['icon-border-container']['icon-border-width'];
-    $fanciblock['icon-border-style'] = $settings['appearance']['icon-border-container']['icon-border-style'];
-    $fanciblock['icon-border-color'] = $settings['appearance']['icon-border-container']['icon-border-color'];
-
-    $fanciblock['box-bg-color-status'] = $settings['appearance']['box-bg-color-status'];
-    $fanciblock['box-bg-color'] = $settings['appearance']['box-bg-color-container']['box-bg-color'];
-
-    $fanciblock['box-border-status'] = $settings['appearance']['box-border-container']['box-border-status'];
-    $fanciblock['box-border'] = $settings['appearance']['box-border-container']['box-border'];
-    $fanciblock['box-border-width'] = (int)$settings['appearance']['box-border-container']['box-border-width'];
-    $fanciblock['box-border-style'] = $settings['appearance']['box-border-container']['box-border-style'];
-    $fanciblock['box-border-color'] = $settings['appearance']['box-border-container']['box-border-color'];
+  $results = &backdrop_static('fanciblock_flatten', array());
+  foreach($settings as $key => $setting) {
+    if(is_array($setting)) {
+      _flatten_fanciblock_settings ($setting);
+    }
+    else {
+      $results[$key] = $setting;
+    }
   }
-  return $fanciblock;
+  return $results;
 }
  
 /**
